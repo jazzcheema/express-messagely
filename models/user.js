@@ -1,5 +1,6 @@
 "use strict";
 
+const db = require("../db");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 const bcrypt = require("bcrypt");
 const { UnauthorizedError, NotFoundError } = require('../expressError');
@@ -18,12 +19,13 @@ class User {
     const hashedPassword = await bcrypt.hash(
       password, BCRYPT_WORK_FACTOR);
 
+    // TODO: current_timestamp instead of $6/new Date()
     const result = await db.query(
-      `INSERT INTO users (username, password, first_name, last_name, phone)
+      `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
       VALUES
-        ($1, $2, $3, $4, $5)
+        ($1, $2, $3, $4, $5, $6)
       RETURNING username, password`,
-      [username, hashedPassword, first_name, last_name, phone]
+      [username, hashedPassword, first_name, last_name, phone, new Date()]
     );
     return result.rows[0];
   }
@@ -39,19 +41,21 @@ class User {
     const user = result.rows[0];
     if (user) {
       if (await bcrypt.compare(password, user.password) === true) {
-        return res.json({ message: "Logged in!" });
+        return true;
       }
     }
-    throw new UnauthorizedError("Invalid user/password");
+    return false;
   };
 
   /** Update last_login_at for user */
 
   static async updateLoginTimestamp(username) {
+    // TODO: current_timestamp instead of $6/new Date()
     const result = await db.query(
       `UPDATE users
         SET last_login_at = $1
-        WHERE username = $2`,
+        WHERE username = $2
+        RETURNING username`,
       [new Date(), username]);
     const user = result.rows[0];
 
@@ -98,6 +102,8 @@ class User {
     if (!user) {
       throw new NotFoundError();
     }
+
+    return user;
   }
 
   /** Return messages from this user.
@@ -109,15 +115,37 @@ class User {
    */
 
   static async messagesFrom(username) {
+    //check user with username exists
+    User.get(username);
+
     const result = await db.query(
-      `SELECT id, messages.to_user,
+      `SELECT id,
+      messages.to_username,
+      users.first_name,
+      users.last_name,
+      users.phone,
       messages.body,
       messages.sent_at,
       messages.read_at
       FROM users JOIN messages on users.username = messages.to_username
-      WHERE messages.from_username = $1 `
+      WHERE messages.from_username = $1`,
+      [username]
     );
-    return result.rows;
+
+    return result.rows.map(msg => {
+      return {
+        id: msg.id,
+        to_user: {
+          username: msg.to_username,
+          first_name: msg.first_name,
+          last_name: msg.last_name,
+          phone: msg.phone
+        },
+        body: msg.body,
+        sent_at: msg.sent_at,
+        read_at: msg.read_at
+      };
+    });
   }
 
   /** Return messages to this user.
@@ -129,6 +157,37 @@ class User {
    */
 
   static async messagesTo(username) {
+    //check user with username exists
+    User.get(username);
+
+    const result = await db.query(
+      `SELECT id,
+      messages.from_username,
+      users.first_name,
+      users.last_name,
+      users.phone,
+      messages.body,
+      messages.sent_at,
+      messages.read_at
+      FROM users JOIN messages on users.username = messages.from_username
+      WHERE messages.to_username = $1`,
+      [username]
+    );
+
+    return result.rows.map(msg => {
+      return {
+        id: msg.id,
+        from_user: {
+          username: msg.from_username,
+          first_name: msg.first_name,
+          last_name: msg.last_name,
+          phone: msg.phone
+        },
+        body: msg.body,
+        sent_at: msg.sent_at,
+        read_at: msg.read_at
+      };
+    });
   }
 }
 
