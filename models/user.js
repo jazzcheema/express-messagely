@@ -19,13 +19,12 @@ class User {
     const hashedPassword = await bcrypt.hash(
       password, BCRYPT_WORK_FACTOR);
 
-    // TODO: current_timestamp instead of $6/new Date()
     const result = await db.query(
       `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
       VALUES
-        ($1, $2, $3, $4, $5, $6)
+        ($1, $2, $3, $4, $5, current_timestamp)
       RETURNING username, password`,
-      [username, hashedPassword, first_name, last_name, phone, new Date()]
+      [username, hashedPassword, first_name, last_name, phone]
     );
     return result.rows[0];
   }
@@ -50,13 +49,13 @@ class User {
   /** Update last_login_at for user */
 
   static async updateLoginTimestamp(username) {
-    // TODO: current_timestamp instead of $6/new Date()
+
     const result = await db.query(
       `UPDATE users
-        SET last_login_at = $1
-        WHERE username = $2
+        SET last_login_at = current_timestamp
+        WHERE username = $1
         RETURNING username`,
-      [new Date(), username]);
+      [username]);
     const user = result.rows[0];
 
     if (!user) {
