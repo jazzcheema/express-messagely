@@ -3,8 +3,8 @@
 const Router = require("express").Router;
 const router = new Router();
 const { UnauthorizedError, BadRequestError } = require("../expressError");
-const { Message } = require('../models/message');
-
+const Message = require('../models/message');
+// TODO: middleware
 /** GET /:id - get detail of message.
  *
  * => {message: {id,
@@ -19,9 +19,9 @@ const { Message } = require('../models/message');
  **/
 
 router.get('/:id', async function (req, res, next) {
-  const message = await Message.get(req.params?.id);
+  const message = await Message.get(req.params.id);
   if (res.locals.user.username === message.from_user.username ||
-    res.local.user.username === message.to_user.username) {
+    res.locals.user.username === message.to_user.username) {
     return res.json({ message });
   }
   throw new UnauthorizedError();
@@ -49,7 +49,7 @@ router.post('/', async function (req, res, next) {
     body: req.body.body
   });
 
-  return json({ message });
+  return res.status(201).json({ message });
 });
 
 
@@ -62,11 +62,11 @@ router.post('/', async function (req, res, next) {
  *
  **/
 router.post('/:id/read', async function (req, res, next) {
-  const retrieveMessage = Message.get(req.params.id);
+  const retrieveMessage = await Message.get(req.params.id);
 
   if (retrieveMessage.to_user.username === res.locals.user.username) {
     const message = await Message.markRead(req.params.id);
-    return json({ message });
+    return res.json({ message });
   }
 
   throw new UnauthorizedError();

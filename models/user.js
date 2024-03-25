@@ -3,7 +3,7 @@
 const db = require("../db");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 const bcrypt = require("bcrypt");
-const { UnauthorizedError, NotFoundError } = require('../expressError');
+const { NotFoundError } = require('../expressError');
 
 /** User of the site. */
 
@@ -40,6 +40,7 @@ class User {
     const user = result.rows[0];
     if (user) {
       if (await bcrypt.compare(password, user.password) === true) {
+        await User.updateLoginTimestamp(username);
         return true;
       }
     }
