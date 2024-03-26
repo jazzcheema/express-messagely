@@ -16,9 +16,11 @@
     "express": "^5.0.0-alpha.8",
     "express-cors": "*",
     "jsonwebtoken": "*",
-    "pg": "*",
-    "supertest": "*"
+    "pg": "*"
   },
   "keywords": [],
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "supertest": "^6.3.4"
+  }
 }
