@@ -4,12 +4,13 @@ const db = require("../db");
 const User = require("./user");
 const Message = require("./message");
 
+let u1;
 
 describe("Test User class", function () {
   beforeEach(async function () {
     await db.query("DELETE FROM messages");
     await db.query("DELETE FROM users");
-    let u = await User.register({
+    u1 = await User.register({
       username: "test",
       password: "password",
       first_name: "Test",
@@ -44,7 +45,7 @@ describe("Test User class", function () {
     let u = await User.get("test");
     expect(u.last_login_at).toBe(null);
 
-    await User.updateLoginTimestamp("test");
+    await u.updateLoginTimestamp();
     let u2 = await User.get("test");
     expect(u2.last_login_at).not.toBe(null);
   });
@@ -104,7 +105,7 @@ describe("Test messages part of User class", function () {
   });
 
   test("can get messages from user", async function () {
-    let m = await User.messagesFrom("test1");
+    let m = await u1.messagesFrom();
     expect(m).toEqual([{
       id: expect.any(Number),
       body: "u1-to-u2",
@@ -120,7 +121,7 @@ describe("Test messages part of User class", function () {
   });
 
   test("can get messages to user", async function () {
-    let m = await User.messagesTo("test1");
+    let m = await u1.messagesTo();
     expect(m).toEqual([{
       id: expect.any(Number),
       body: "u2-to-u1",

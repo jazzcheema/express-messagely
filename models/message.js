@@ -8,6 +8,33 @@ const db = require("../db");
 /** Message on the site. */
 
 class Message {
+  constructor({ id, from_username, to_username, body, sent_at }) {
+    this.id = id;
+    this.from_username = from_username;
+    this.to_username = to_username;
+    this.body = body;
+    this.sent_at = sent_at;
+  }
+
+  // get id() {
+  //   return this._id;
+  // }
+
+  // set id(id) {
+  //   if (this._id === undefined) {
+  //     this._id = id;
+  //   }
+  // }
+
+  // get body() {
+  //   return this._body;
+  // }
+
+  // set body(body) {
+  //   if (this._body === undefined) {
+  //     this._body = body;
+  //   }
+  // }
 
   /** Register new message -- returns
    *    {id, from_username, to_username, body, sent_at}
@@ -25,7 +52,7 @@ class Message {
              RETURNING id, from_username, to_username, body, sent_at`,
         [from_username, to_username, body]);
 
-    return result.rows[0];
+    return new Message(result.rows[0]);
   }
 
   /** Update read_at for message
@@ -36,18 +63,18 @@ class Message {
    *
    **/
 
-  static async markRead(id) {
+  async markRead() {
     const result = await db.query(
           `UPDATE messages
            SET read_at = current_timestamp
              WHERE id = $1
              RETURNING id, read_at`,
-        [id]);
+        [this.id]);
     const message = result.rows[0];
 
     if (!message) throw new NotFoundError(`No such message: ${id}`);
 
-    return message;
+    return new Message(message);
   }
 
   /** Get: get message by id

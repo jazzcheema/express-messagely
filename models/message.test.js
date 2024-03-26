@@ -62,7 +62,7 @@ describe("Test Message class", function () {
     });
     expect(m.read_at).toBe(undefined);
 
-    Message.markRead(m.id);
+    m.markRead();
     const result = await db.query("SELECT read_at FROM messages WHERE id=$1",
         [m.id]);
     expect(result.rows[0].read_at).toEqual(expect.any(Date));

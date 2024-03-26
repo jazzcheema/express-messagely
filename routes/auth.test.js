@@ -67,7 +67,7 @@ describe("Auth Routes Test", function () {
       expect(response.statusCode).toEqual(401);
     });
 
-    test("won't login w/wrong password", async function () {
+    test("won't login w/wrong username", async function () {
       let response = await request(app)
         .post("/auth/login")
         .send({ username: "not-user", password: "password" });

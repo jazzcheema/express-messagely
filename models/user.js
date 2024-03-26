@@ -3,11 +3,20 @@
 const db = require("../db");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 const bcrypt = require("bcrypt");
-const { NotFoundError } = require('../expressError');
+const { NotFoundError, BadRequestError, UnauthorizedError } = require('../expressError');
 
 /** User of the site. */
 
 class User {
+  constructor({ username, password, first_name, last_name, phone, join_at, last_login_at }) {
+    this.username = username;
+    this.password = password;
+    this.first_name = first_name;
+    this.last_name = last_name;
+    this.phone = phone;
+    this.join_at = join_at;
+    this.last_login_at = last_login_at;
+  }
 
   /** Register new user. Returns
    *    {username, password, first_name, last_name, phone}
@@ -26,21 +35,21 @@ class User {
       RETURNING username, password, first_name, last_name, phone`,
       [username, hashedPassword, first_name, last_name, phone]
     );
-    return result.rows[0];
+    return new User(result.rows[0]);
   }
 
   /** Authenticate: is username/password valid? Returns boolean. */
 
   static async authenticate(username, password) {
-    const result = await db.query(
-      `SELECT password
-         FROM users
-         WHERE username = $1`,
-      [username]);
-    const user = result.rows[0];
+    let user;
+    try {
+      user = await User.get(username);
+    } catch {
+      throw new UnauthorizedError();
+    }
     if (user) {
       if (await bcrypt.compare(password, user.password) === true) {
-        await User.updateLoginTimestamp(username);
+        await user.updateLoginTimestamp();
         return true;
       }
     }
@@ -49,14 +58,14 @@ class User {
 
   /** Update last_login_at for user */
 
-  static async updateLoginTimestamp(username) {
+  async updateLoginTimestamp() {
 
     const result = await db.query(
       `UPDATE users
         SET last_login_at = current_timestamp
         WHERE username = $1
         RETURNING username`,
-      [username]);
+      [this.username]);
     const user = result.rows[0];
 
     if (!user) {
@@ -73,7 +82,7 @@ class User {
       FROM users
       ORDER BY username`
     );
-    return results.rows;
+    return results.rows.map(u => new User(u));
   }
 
   /** Get: get user by username
@@ -103,7 +112,7 @@ class User {
       throw new NotFoundError();
     }
 
-    return user;
+    return new User(user);
   }
 
   /** Return messages from this user.
@@ -114,9 +123,9 @@ class User {
    *   {username, first_name, last_name, phone}
    */
 
-  static async messagesFrom(username) {
+  async messagesFrom() {
     //check user with username exists
-    User.get(username);
+    User.get(this.username);
 
     const result = await db.query(
       `SELECT id,
@@ -129,7 +138,7 @@ class User {
       messages.read_at
       FROM users JOIN messages on users.username = messages.to_username
       WHERE messages.from_username = $1`,
-      [username]
+      [this.username]
     );
 
     return result.rows.map(msg => {
@@ -156,9 +165,9 @@ class User {
    *   {username, first_name, last_name, phone}
    */
 
-  static async messagesTo(username) {
+  async messagesTo() {
     //check user with username exists
-    User.get(username);
+    User.get(this.username);
 
     const result = await db.query(
       `SELECT id,
@@ -171,7 +180,7 @@ class User {
       messages.read_at
       FROM users JOIN messages on users.username = messages.from_username
       WHERE messages.to_username = $1`,
-      [username]
+      [this.username]
     );
 
     return result.rows.map(msg => {
