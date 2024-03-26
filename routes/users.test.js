@@ -60,35 +60,35 @@ describe("GET /users", function () {
 
 
 /** Returns a information on a single user. */
-//FIXME: come back to fixing join_at date/time
+// FIXME: come back to fixing join_at date/time
 
-// describe("GET /users/:username", function () {
-//   test("Returns a single user", async function () {
-//     const response = await request(app).get(`/users/${u1.username}`)
-//       .query({ _token: testUserToken });
-//     expect(response.statusCode).toEqual(200);
-//     expect(response.body).toEqual({
-//       user:
-//       {
-//         username: "test1",
-//         first_name: "Test1",
-//         last_name: "Testy1",
-//         phone: "+14155550000",
-//         join_at: ,
-//         last_login_at: null
-//       }
-//     }
-//     );
-//   });
+describe("GET /users/:username", function () {
+  test("Returns a single user", async function () {
+    const response = await request(app).get(`/users/${u1.username}`)
+      .query({ _token: testUserToken });
+    expect(response.statusCode).toEqual(200);
+    expect(response.body).toEqual({
+      user:
+      {
+        username: "test1",
+        first_name: "Test1",
+        last_name: "Testy1",
+        phone: "+14155550000",
+        join_at: expect.any(String),
+        last_login_at: null
+      }
+    }
+    );
+  });
 
-//   /** Missing token. */
-//   test("Bad request: Returns a single user", async function () {
-//     const response = await request(app).get(`/users/${u1.username}`)
-//       .query({ _token: 'bad' });
-//     expect(response.statusCode).toEqual(401);
+  /** Missing token. */
+  test("Bad request: Returns a single user", async function () {
+    const response = await request(app).get(`/users/${u1.username}`)
+      .query({ _token: 'bad' });
+    expect(response.statusCode).toEqual(401);
 
-//   });
-// });
+  });
+});
 
 
 
