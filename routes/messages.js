@@ -4,6 +4,7 @@ const Router = require("express").Router;
 const router = new Router();
 const { UnauthorizedError, BadRequestError } = require("../expressError");
 const Message = require('../models/message');
+const User = require("../models/user");
 
 /** GET /:id - get detail of message.
  *
@@ -41,6 +42,8 @@ router.post('/', async function (req, res, next) {
   if (!req.body || !req.body.to_username || !req.body.body) {
     throw new BadRequestError();
   }
+
+  await User.get(req.body.to_username);
 
   const username = req.body.to_username;
   const message = await Message.create({

@@ -14,6 +14,7 @@ class Message {
    */
 
   static async create({ from_username, to_username, body }) {
+
     const result = await db.query(
           `INSERT INTO messages (from_username,
                                  to_username,

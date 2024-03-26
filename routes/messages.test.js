@@ -48,7 +48,7 @@ beforeEach(async function () {
 });
 
 
-/** Return all users. */
+/** Return message by id. */
 
 describe("GET /messages/:id", function () {
   test("Returns specific message", async function () {
@@ -86,10 +86,131 @@ describe("GET /messages/:id", function () {
     expect(response.statusCode).toEqual(401);
   });
 
-  /** Error to get message by id without token. */
+  /** Error to get message by id as wrong user. */
   test("Get nonexistent message", async function () {
     const response = await request(app).get(`/messages/0`)
       .query({ _token: testUser1Token });
     expect(response.statusCode).toEqual(404);
   });
 });
+
+
+/* Test message creation */
+
+describe("POST /messages", function () {
+  test("Create new message", async function () {
+    const response = await request(app).post(`/messages`)
+      .send({
+        _token: testUser2Token,
+        to_username: 'test1',
+        body: 'hi'
+      });
+    expect(response.statusCode).toEqual(201);
+    expect(response.body).toEqual({
+      message: {
+        id: expect.any(Number),
+        from_username: 'test2',
+        to_username: 'test1',
+        body: 'hi',
+        sent_at: expect.any(String)
+      }
+    })
+  });
+
+/* Should be able to send messages to self. */
+  test("Create new message to self", async function () {
+    const response = await request(app).post(`/messages`)
+      .send({
+        _token: testUser2Token,
+        to_username: 'test2',
+        body: 'hi'
+      });
+    expect(response.statusCode).toEqual(201);
+    expect(response.body).toEqual({
+      message: {
+        id: expect.any(Number),
+        from_username: 'test2',
+        to_username: 'test2',
+        body: 'hi',
+        sent_at: expect.any(String)
+      }
+    })
+  });
+
+
+  /* Unsuccessful message creation. No token */
+  test("Bad request: Create new message w/o token", async function () {
+    const response = await request(app).post(`/messages`)
+      .send({
+        to_username: 'test1',
+        body: 'hi'
+      });
+    expect(response.statusCode).toEqual(401);
+  });
+
+
+  /* Unsuccessful message creation. Sending to nonexistent user */
+  test("Bad request: Create new message to nonexistent user", async function () {
+    const response = await request(app).post(`/messages`)
+      .send({
+        _token: testUser2Token,
+        to_username: 'bad_user',
+        body: 'hi'
+      });
+    expect(response.statusCode).toEqual(404);
+  });
+
+
+  /* Unsuccessful message creation. Missing data */
+  test("Bad request: Create new message w/o all required data", async function () {
+    const response = await request(app).post(`/messages`)
+      .send({
+        _token: testUser2Token,
+        body: 'hi'
+      });
+    expect(response.statusCode).toEqual(400);
+  });
+});
+
+
+
+/* Mark messages as read */
+describe("POST /messages/:id/read", function () {
+  test("Mark message as read", async function () {
+    const response = await request(app).post(`/messages/${m1.id}/read`)
+      .query({ _token: testUser2Token });
+    expect(response.statusCode).toEqual(200);
+    expect(response.body).toEqual({
+      message:
+      {
+        id: m1.id,
+        read_at: expect.any(String)
+      }
+    }
+    );
+  });
+
+
+  /* Only to_user should be able mark as read */
+  test("From_user cannot mark as read", async function () {
+    const response = await request(app).post(`/messages/${m1.id}/read`)
+      .query({ _token: testUser1Token });
+    expect(response.statusCode).toEqual(401);
+  });
+
+
+  /** Error to mark message as read without token. */
+  test("Bad request to mark message as read", async function () {
+    const response = await request(app).post(`/messages/${m1.id}/read`)
+      .query({ _token: 'bad' });
+    expect(response.statusCode).toEqual(401);
+  });
+
+  /** Error to mark nonexistent message as read. */
+  test("Get nonexistent message", async function () {
+    const response = await request(app).post(`/messages/0/read`)
+      .query({ _token: testUser1Token });
+    expect(response.statusCode).toEqual(404);
+  });
+});
+
