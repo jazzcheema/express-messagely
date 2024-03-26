@@ -4,7 +4,7 @@ const Router = require("express").Router;
 const router = new Router();
 const { UnauthorizedError, BadRequestError } = require("../expressError");
 const Message = require('../models/message');
-// TODO: middleware
+
 /** GET /:id - get detail of message.
  *
  * => {message: {id,

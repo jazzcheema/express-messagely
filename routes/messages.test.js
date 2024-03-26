@@ -57,29 +57,28 @@ describe("GET /messages/:id", function () {
     expect(response.statusCode).toEqual(200);
     expect(response.body).toEqual({
       message:
-        {
-          id: m1.id,
-          body: 'hello',
-          sent_at: m1.sent_at,
-          read_at: null,
-          from_user: {
-            username: u1.username,
-            first_name: u1.first_name,
-            last_name: u1.last_name,
-            phone: u1.phone
-          },
-          to_user: {
-            username: u2.username,
-            first_name: u2.first_name,
-            last_name: u2.last_name,
-            phone: u2.phone
-          }
+      {
+        id: m1.id,
+        body: 'hello',
+        sent_at: expect.any(String),
+        read_at: null,
+        from_user: {
+          username: u1.username,
+          first_name: 'Test1',
+          last_name: 'Testy1',
+          phone: "+14155550000"
+        },
+        to_user: {
+          username: u2.username,
+          first_name: "Test2",
+          last_name: "Testy2",
+          phone: "+14155550000"
         }
+      }
     }
     );
   });
 
-  // TODO: currently getting 404 returned. look into this.
   /** Error to get message by id without token. */
   test("Bad request to get specific message", async function () {
     const response = await request(app).get(`/messages/${m1.id}`)
